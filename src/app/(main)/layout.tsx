@@ -1,0 +1,19 @@
+import React from 'react'
+import Sidebar from '@/components/sidebar'
+import InfoBar from '@/components/infobar'
+
+type Props = { children: React.ReactNode }
+
+const Layout = (props: Props) => {
+  return (
+    <div className="flex h-screen">
+      <Sidebar />
+      <div className="w-full flex flex-col">
+        <InfoBar />
+        {props.children}
+      </div>
+    </div>
+  )
+}
+
+export default Layout
