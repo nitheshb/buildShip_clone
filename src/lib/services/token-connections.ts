@@ -1,6 +1,6 @@
 "use server";
 import { currentUser } from "@clerk/nextjs";
-import { db } from "./db";
+import { db } from "../database/db";
 
 export const onGetTokens = async () => {
   const user = await currentUser();
@@ -35,7 +35,6 @@ export const onCreateTokenKey = async (
   teamId: string = ""
 ) => {
   const user = await currentUser();
-  console.log("helloe from ceakjkj");
   if (user) {
     const existingToken = await db.accessTokenKeys.findFirst({
       where: {

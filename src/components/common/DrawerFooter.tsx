@@ -5,6 +5,7 @@ interface DrawerFooterProps {
     currentStep: number;
     isFileUpload: boolean;
     isLoading: boolean;
+    isEditMode?: boolean;
     selectedTablesCount: number;
     onCancel: () => void;
     onPrevious: () => void;
@@ -17,6 +18,7 @@ export const DrawerFooter: React.FC<DrawerFooterProps> = ({
     currentStep,
     isFileUpload,
     isLoading,
+    isEditMode = false,
     selectedTablesCount,
     onCancel,
     onPrevious,
@@ -94,7 +96,7 @@ export const DrawerFooter: React.FC<DrawerFooterProps> = ({
                     onClick={onSubmit}
                     disabled={isLoading}
                 >
-                    {isLoading ? 'Connecting...' : 'Submit'}
+                    {isLoading ? 'Saving...' : isEditMode ? 'Update' : 'Save'}
                 </Button>
             </div>
         );

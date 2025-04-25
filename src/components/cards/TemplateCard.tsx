@@ -1,17 +1,20 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 interface TemplateCardProps {
   title: string;
+  value: string;
   description: string;
   icons: string[];
   className?: string;
-  onConnect: (templateTitle: string) => void;
+  onConnect: (templateValue: string) => void;
 }
 
 const TemplateCard: React.FC<TemplateCardProps> = ({ 
   title, 
+  value,
   description, 
   icons, 
   className,
@@ -23,12 +26,17 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
         <div className="flex flex-row">
           {icons.map((icon, i) => (
             <div key={i} className="dark:bg-white rounded-md p-1  mr-1 flex items-center justify-center">
-              <img src={icon} alt={`icon-${i}`} className="w-8 h-8" />
+              <Image 
+                src={icon} 
+                alt={`icon-${i}`} 
+                width={32} 
+                height={32} 
+              />
             </div>
           ))}
         </div>
         <div>
-          <Button onClick={() => onConnect(title)}>
+          <Button onClick={() => onConnect(value)}>
             Connect
           </Button>
         </div>

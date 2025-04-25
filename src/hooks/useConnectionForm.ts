@@ -4,10 +4,11 @@ import {
   PostgreSQLFormData, 
   MongoDBFormData, 
   SupabaseFormData, 
-  FirebaseFormData, 
-  AIQueryFormData
+  AIQueryFormData,
+  FirestoreFormData,
+  NeonFormData
 } from '@/lib/types';
-import { ConnectionService } from '@/lib/connectionService';
+import { ConnectionService } from '@/lib/services/connectionService';
 
 export const useMySQLForm = () => {
   const [formData, setFormData] = useState<MySQLFormData>({
@@ -41,6 +42,20 @@ export const useMySQLForm = () => {
     return result;
   };
 
+  const handleUpdate = async (connectionId: string, userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    const result = await ConnectionService.updateMySQLConnection(connectionId, formData, userId);
+    
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    
+    return result;
+  };
+
   const resetForm = () => {
     setFormData({
       host: '',
@@ -59,6 +74,7 @@ export const useMySQLForm = () => {
     setFormData,
     handleInputChange,
     handleSubmit,
+    handleUpdate,
     resetForm,
     isSubmitting,
     error
@@ -93,6 +109,20 @@ export const usePostgreSQLForm = () => {
     return result;
   };
 
+  const handleUpdate = async (connectionId: string, userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    const result = await ConnectionService.updatePostgreSQLConnection(connectionId, formData, userId);
+    
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    
+    return result;
+  };
+
   const resetForm = () => {
     setFormData({ 
       databaseUrl: '', 
@@ -107,6 +137,204 @@ export const usePostgreSQLForm = () => {
     setFormData,
     handleInputChange,
     handleSubmit,
+    handleUpdate,
+    resetForm,
+    isSubmitting,
+    error
+  };
+};
+
+export const useNeonForm = () => {
+  const [formData, setFormData] = useState<NeonFormData>({
+    databaseUrl: '',
+    connectionName: '',
+    promptHelper: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    const result = await ConnectionService.saveNeonConnection(formData, userId);
+    
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    
+    return result;
+  };
+
+  const handleUpdate = async (connectionId: string, userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    const result = await ConnectionService.updateNeonConnection(connectionId, formData, userId);
+    
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    
+    return result;
+  };
+
+  const resetForm = () => {
+    setFormData({ 
+      databaseUrl: '', 
+      connectionName: '',
+      promptHelper: ''
+    });
+    setError(null);
+  };
+
+  return {
+    formData,
+    setFormData,
+    handleInputChange,
+    handleSubmit,
+    handleUpdate,
+    resetForm,
+    isSubmitting,
+    error
+  };
+};
+
+export const useSupabaseForm = () => {
+  const [formData, setFormData] = useState<SupabaseFormData>({
+    supabaseUrl: '',
+    supabaseKey: '',
+    databaseUrl: '',
+    connectionName: '',
+    promptHelper: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    const result = await ConnectionService.saveSupabaseConnection(formData, userId);
+    
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    
+    return result;
+  };
+
+  const handleUpdate = async (connectionId: string, userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    const result = await ConnectionService.updateSupabaseConnection(connectionId, formData, userId);
+    
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    
+    return result;
+  };
+
+  const resetForm = () => {
+    setFormData({
+      supabaseUrl: '',
+      supabaseKey: '',
+      databaseUrl: '',
+      connectionName: '',
+      promptHelper: ''
+    });
+    setError(null);
+  };
+
+  return {
+    formData,
+    setFormData,
+    handleInputChange,
+    handleSubmit,
+    handleUpdate,
+    resetForm,
+    isSubmitting,
+    error
+  };
+};
+
+export const useFirestoreForm = () => {
+  const [formData, setFormData] = useState<FirestoreFormData>({
+    clientEmail: '',
+    privateKey: '',
+    projectId: '',
+    connectionName: '',
+    promptHelper: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    const result = await ConnectionService.saveFirestoreConnection(formData, userId);
+    
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    
+    return result;
+  };
+
+  const handleUpdate = async (connectionId: string, userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    const result = await ConnectionService.updateFirestoreConnection(connectionId, formData, userId);
+    
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    
+    return result;
+  };
+
+  const resetForm = () => {
+    setFormData({
+      clientEmail: '',
+      privateKey: '',
+      projectId: '',
+      connectionName: '',
+      promptHelper: ''
+    });
+    setError(null);
+  };
+
+  return {
+    formData,
+    setFormData,
+    handleInputChange,
+    handleSubmit,
+    handleUpdate,
     resetForm,
     isSubmitting,
     error
@@ -115,7 +343,7 @@ export const usePostgreSQLForm = () => {
 
 export const useMongoDBForm = () => {
   const [formData, setFormData] = useState<MongoDBFormData>({
-    connectionString: '',
+    databaseUrl: '',
     database: '',
     username: '',
     password: '',
@@ -144,9 +372,23 @@ export const useMongoDBForm = () => {
     return result;
   };
 
+  const handleUpdate = async (connectionId: string, userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    const result = await ConnectionService.updateMongoDBConnection(connectionId, formData, userId);
+    
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    
+    return result;
+  };
+
   const resetForm = () => {
     setFormData({
-      connectionString: '',
+      databaseUrl: '',
       database: '',
       username: '',
       password: '',
@@ -161,114 +403,7 @@ export const useMongoDBForm = () => {
     setFormData,
     handleInputChange,
     handleSubmit,
-    resetForm,
-    isSubmitting,
-    error
-  };
-};
-
-export const useSupabaseForm = () => {
-  const [formData, setFormData] = useState<SupabaseFormData>({
-    supabaseUrl: '',
-    supabaseKey: '',
-    connectionName: '',
-    promptHelper: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
-  };
-
-  const handleSubmit = async (userId: string) => {
-    setIsSubmitting(true);
-    setError(null);
-    
-    const result = await ConnectionService.saveSupabaseConnection(formData, userId);
-    
-    setIsSubmitting(false);
-    if (!result.success && result.error) {
-      setError(result.error);
-    }
-    
-    return result;
-  };
-
-  const resetForm = () => {
-    setFormData({
-      supabaseUrl: '',
-      supabaseKey: '',
-      connectionName: '',
-      promptHelper: ''
-    });
-    setError(null);
-  };
-
-  return {
-    formData,
-    setFormData,
-    handleInputChange,
-    handleSubmit,
-    resetForm,
-    isSubmitting,
-    error
-  };
-};
-
-export const useFirebaseForm = () => {
-  const [formData, setFormData] = useState<FirebaseFormData>({
-    clientEmail: '',
-    privateKeyId: '',
-    privateKey: '',
-    projectId: '',
-    clientId: '',
-    clientUrl: '',
-    connectionName: '',
-    promptHelper: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
-  };
-
-  const handleSubmit = async (userId: string) => {
-    setIsSubmitting(true);
-    setError(null);
-    
-    const result = await ConnectionService.saveFirebaseConnection(formData, userId);
-    
-    setIsSubmitting(false);
-    if (!result.success && result.error) {
-      setError(result.error);
-    }
-    
-    return result;
-  };
-
-  const resetForm = () => {
-    setFormData({
-      clientEmail: '',
-      privateKeyId: '',
-      privateKey: '',
-      projectId: '',
-      clientId: '',
-      clientUrl: '',
-      connectionName: '',
-      promptHelper: ''
-    });
-    setError(null);
-  };
-
-  return {
-    formData,
-    setFormData,
-    handleInputChange,
-    handleSubmit,
+    handleUpdate,
     resetForm,
     isSubmitting,
     error
@@ -309,6 +444,17 @@ export const usePdfQueryForm = () => {
     return result;
   };
 
+  const handleUpdate = async (connectionId: string, userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    const result = await ConnectionService.updatePdfQuery(connectionId, formData, userId);
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    return result;
+  };
+
   const resetForm = () => {
     setFormData({
       filePath: '',
@@ -322,6 +468,7 @@ export const usePdfQueryForm = () => {
     setFormData,
     handleInputChange,
     handleSubmit,
+    handleUpdate,
     resetForm,
     isSubmitting,
     error,
@@ -362,6 +509,17 @@ export const useExcelQueryForm = () => {
     return result;
   };
 
+  const handleUpdate = async (connectionId: string, userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    const result = await ConnectionService.updateExcelQuery(connectionId, formData, userId);
+    setIsSubmitting(false);
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+    return result;
+  };
+
   const resetForm = () => {
     setFormData({
       filePath: '',
@@ -375,12 +533,9 @@ export const useExcelQueryForm = () => {
     setFormData,
     handleInputChange,
     handleSubmit,
+    handleUpdate,
     resetForm,
     isSubmitting,
     error,
   };
 };
-
-
-
-

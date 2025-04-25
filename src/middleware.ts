@@ -15,7 +15,6 @@ export default authMiddleware({
     "/api/googleCalendar/callback",
     "/api/flow",
     "/api/cron/wait",
-    "/api/fetch-tables/firestore",
   ],
 });
 

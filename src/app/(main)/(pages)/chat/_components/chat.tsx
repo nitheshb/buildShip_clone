@@ -12,7 +12,18 @@ interface ChatProps {
 const Chat = ({ connectionId }: ChatProps) => {
   const [connection, setConnection] = useState<any | null>(null);
   const [showPanel, setShowPanel] = useState(false);
-  const { connections, error } = useConnections();
+  const { connections, error, getTemplateTitle } = useConnections();
+
+  // useEffect(() => {
+  //   const parentScroller = document.querySelector('.overflow-auto');
+  //   if (parentScroller) {
+  //     const originalStyle = parentScroller.getAttribute('style') || '';
+  //     parentScroller.setAttribute('style', `${originalStyle}; overflow: hidden !important`);
+  //     return () => {
+  //       parentScroller.setAttribute('style', originalStyle);
+  //     };
+  //   }
+  // }, []);
 
   useEffect(() => {
     if (connections && connections.length > 0 && connectionId) {
@@ -40,7 +51,7 @@ const Chat = ({ connectionId }: ChatProps) => {
     <div className="flex flex-col h-screen">
       <div className="flex flex-row h-screen">
         <div className={`flex-1 transition-all duration-300 p-4 flex items-center justify-center ${showPanel ? 'w-3/4' : 'w-full'}`}>
-          <ChatBody connectionId={connectionId} connection={connection} />
+          <ChatBody connectionId={connectionId} connection={connection} getTemplateTitle={getTemplateTitle}/>
         </div>
         
         <div className={`h-full transition-all duration-300 ${showPanel ? 'w-1/4' : 'w-0 overflow-hidden'}`}>

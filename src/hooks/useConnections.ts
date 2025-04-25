@@ -2,16 +2,19 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useUser } from '@clerk/nextjs';
 import { templateData } from '@/app/(main)/(pages)/dashboard/_components/TemplatesSection';
+import { supabase } from '@/lib/services/connectionService';
 
 export interface Connection {
     id: string;
     name: string;
     type: string;
-    connection_details?: any;
-    prompt_helper: any;
-    selectedTables: string[];
-    icon: string[];
-    created_at: string;
+    userId?: string
+    connectionDetails?: any;
+    promptHelper: any;
+    selectedTables?: string[];
+    tableDescriptions?: Record<string, string>;
+    icon?: string[];
+    createdAt: string;
 }
 
 export const useConnections = () => {
@@ -20,13 +23,14 @@ export const useConnections = () => {
     const [error, setError] = useState<string | null>(null);
     const { user } = useUser();
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const getTemplateTitle = (value: string) => {
+        const template = templateData.find(item => item.value === value);
+        return template ? template.title : "Unknown Template";
+      };
+      
 
     const getIconForType = (type: string): string[] => {
-        const template = templateData.find(item => item.title.toLowerCase() === type.toLowerCase());
-
+        const template = templateData.find(item => item.value === type);
         return template?.icons || ['database.svg'];
     };
 
@@ -44,6 +48,31 @@ export const useConnections = () => {
         } catch (error) {
             console.error('Error parsing prompt_helper:', error);
             return [];
+        }
+    };
+    
+    const getTableDescriptions = (promptHelper: any): Record<string, string> => {
+        if (!promptHelper) return {};
+        
+        try {
+            const parsedPromptHelper = typeof promptHelper === 'string' ? JSON.parse(promptHelper) : promptHelper;
+            
+            if (Array.isArray(parsedPromptHelper.selectedTables)) {
+                const descriptions: Record<string, string> = {};
+                
+                parsedPromptHelper.selectedTables.forEach((table: any) => {
+                    if (table.name && table.description) {
+                        descriptions[table.name] = table.description;
+                    }
+                });
+                
+                return descriptions;
+            }
+            
+            return {};
+        } catch (error) {
+            console.error('Error parsing table descriptions from promptHelper:', error);
+            return {};
         }
     };
 
@@ -70,10 +99,12 @@ export const useConnections = () => {
                         id: conn.id,
                         name: conn.connection_name,
                         type: conn.connection_type,
-                        prompt_helper: conn.prompt_helper,
+                        connectionDetails: conn.connection_details,
+                        promptHelper: conn.prompt_helper,
                         selectedTables: getTableNames(conn.prompt_helper),
+                        tableDescriptions: getTableDescriptions(conn.prompt_helper),
                         icon: getIconForType(conn.connection_type),
-                        created_at: conn.created_at
+                        createdAt: conn.created_at
                     }));
 
                     setConnections(formattedConnections);
@@ -89,5 +120,5 @@ export const useConnections = () => {
         fetchConnections();
     }, [user]);
 
-    return { connections, isLoading, error };
+    return { connections, isLoading, error, getTemplateTitle };
 };

@@ -5,42 +5,50 @@ import TemplateCard from '@/components/cards/TemplateCard';
 export const templateData = [
     {
         title: "MySQL",
+        value: "chat_with_mysql",
         description: "Connect and manage your MySQL databases with ease.",
         icons: ['mysql.svg'],
     },
     {
         title: "PostgreSQL",
+        value: "chat_with_postgresql",
         description: "Manage your PostgreSQL databases securely.",
         icons: ['postgresql.svg'],
     },
     {
         title: "Supabase",
+        value: "chat_with_supabase",
         description: "Connect to your Supabase and manage your data securely.",
         icons: ['supabase.svg'],
     },
     {
         title: "Neon",
+        value: "chat_with_neon",
         description: "Connect and manage your Neon database securely.",
         icons: ['neon.svg'],
     },
     {
-        title: "Firebase",
-        description: "Connect to your Firebase instances.",
-        icons: ['firebase.svg'],
+        title: "Firestore",
+        value: "chat_with_firestore",
+        description: "Connect to your Firestore instances.",
+        icons: ['firestore.svg'],
     },
     {
         title: "MongoDB",
+        value: "chat_with_mongodb",
         description: "Connect to your MongoDB instances and manage collections.",
         icons: ['mongodb.svg'],
     },
     {
         title: "PdfQuery",
+        value: "chat_with_pdf",
         description:
             "Chat with OpenAI and get answers to the questions asked from the PDF.",
         icons: ['pdf.svg', 'openai.svg'],
     },
     {
         title: "ExcelQuery",
+        value: "chat_with_excel",
         description:
             "Chat with OpenAI and get answers to the questions asked from the uploaded Excel sheet.",
         icons: ['excel.svg', 'openai.svg'],
@@ -48,7 +56,7 @@ export const templateData = [
 ];
 
 interface TemplatesSectionProps {
-    onConnect: (templateTitle: string) => void;
+    onConnect: (templateValue: string) => void;
 }
 
 const TemplatesSection: React.FC<TemplatesSectionProps> = ({ onConnect }) => {
@@ -84,6 +92,7 @@ const TemplatesSection: React.FC<TemplatesSectionProps> = ({ onConnect }) => {
                         <TemplateCard
                             key={index}
                             title={template.title}
+                            value={template.value}
                             description={template.description}
                             icons={template.icons}
                             onConnect={onConnect}

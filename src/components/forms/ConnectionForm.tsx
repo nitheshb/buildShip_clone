@@ -1,24 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface ConnectionFormProps {
-    templateTitle: string;
+    templateValue: string;
     currentForm: any;
     isLoading: boolean;
     onTestConnection: () => Promise<void>;
 }
 
 export const ConnectionForm: React.FC<ConnectionFormProps> = ({ 
-    templateTitle, 
+    templateValue, 
     currentForm, 
     isLoading, 
     onTestConnection 
 }) => {
+    const [passwordVisible, setPasswordVisible] = useState(false);
+
+    const togglePasswordVisibility = () => {
+        setPasswordVisible(prev => !prev);
+      };
     
-    switch (templateTitle) {
-        case 'MySQL':
+    switch (templateValue) {
+        case 'chat_with_mysql':
             return (
                 <>
                     <div className="mb-4">
@@ -63,14 +69,23 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                     </div>
                     <div className="mb-4">
                         <Label htmlFor="password">Password</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            placeholder="••••••••"
-                            className="mt-1"
-                            value={currentForm.formData.password}
-                            onChange={currentForm.handleInputChange}
-                        />
+                        <div className="relative">
+              <Input
+                id="password"
+                type={passwordVisible ? 'text' : 'password'} // Toggle between password and text
+                placeholder="••••••••"
+                className="mt-1"
+                value={currentForm.formData.password}
+                onChange={currentForm.handleInputChange}
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                {passwordVisible ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
                     </div>
                     <div className="mb-4">
                         <Label htmlFor="databasename">Database Name</Label>
@@ -93,8 +108,8 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                     </div>
                 </>
             );
-        case 'PostgreSQL':
-        case 'Neon':
+        case 'chat_with_postgresql':
+        case 'chat_with_neon':
             return (
                 <>
                     <div className="mb-4">
@@ -111,7 +126,7 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                         <Label htmlFor="databaseUrl">Database URL</Label>
                         <Input
                             id="databaseUrl"
-                            placeholder="postgresql://user:password@host:port/database"
+                            placeholder="databaseUrl"
                             className="mt-1"
                             value={currentForm.formData.databaseUrl}
                             onChange={currentForm.handleInputChange}
@@ -128,7 +143,7 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                     </div>
                 </>
             );
-        case 'MongoDB':
+        case 'chat_with_mongodb':
             return (
                 <>
                     <div className="mb-4">
@@ -142,12 +157,12 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                         />
                     </div>
                     <div className="mb-4">
-                        <Label htmlFor="connectionString">Connection String</Label>
+                        <Label htmlFor="databaseUrl">Connection URL</Label>
                         <Input
-                            id="connectionString"
+                            id="databaseUrl"
                             placeholder="mongodb://localhost:27017"
                             className="mt-1"
-                            value={currentForm.formData.connectionString}
+                            value={currentForm.formData.databaseUrl}
                             onChange={currentForm.handleInputChange}
                         />
                     </div>
@@ -193,7 +208,7 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                     </div>
                 </>
             );
-        case 'Supabase':
+        case 'chat_with_supabase':
             return (
                 <>
                     <div className="mb-4">
@@ -227,6 +242,16 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                         />
                     </div>
                     <div className="mb-4">
+                        <Label htmlFor="databaseUrl">Supabase Connection URL</Label>
+                        <Input
+                            id="databaseUrl"
+                            placeholder="databaseUrl"
+                            className="mt-1"
+                            value={currentForm.formData.databaseUrl}
+                            onChange={currentForm.handleInputChange}
+                        />
+                    </div>
+                    <div className="mb-4">
                         <Button
                             type="button"
                             onClick={onTestConnection}
@@ -237,7 +262,7 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                     </div>
                 </>
             );
-        case 'Firebase':
+        case 'chat_with_firestore':
             return (
                 <>
                     <div className="mb-4">
@@ -254,19 +279,9 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                         <Label htmlFor="clientEmail">Client Email</Label>
                         <Input
                             id="clientEmail"
-                            placeholder="your-client-email"
+                            placeholder="Your Client Email"
                             className="mt-1"
                             value={currentForm.formData.clientEmail}
-                            onChange={currentForm.handleInputChange}
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <Label htmlFor="privateKeyId">Private Key Id</Label>
-                        <Input
-                            id="privateKeyId"
-                            placeholder="your-private-key-id"
-                            className="mt-1"
-                            value={currentForm.formData.privateKeyId}
                             onChange={currentForm.handleInputChange}
                         />
                     </div>
@@ -274,7 +289,7 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                         <Label htmlFor="privateKey">Private Key</Label>
                         <Input
                             id="privateKey"
-                            placeholder="your-private-key"
+                            placeholder="Your Private Key"
                             className="mt-1"
                             value={currentForm.formData.privateKey}
                             onChange={currentForm.handleInputChange}
@@ -284,29 +299,9 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                         <Label htmlFor="projectId">Project ID</Label>
                         <Input
                             id="projectId"
-                            placeholder="your-project-id"
+                            placeholder="Your Project Id"
                             className="mt-1"
                             value={currentForm.formData.projectId}
-                            onChange={currentForm.handleInputChange}
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <Label htmlFor="clientId">Client ID</Label>
-                        <Input
-                            id="clientId"
-                            placeholder="your-client-id"
-                            className="mt-1"
-                            value={currentForm.formData.clientId}
-                            onChange={currentForm.handleInputChange}
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <Label htmlFor="clientUrl">Client URL</Label>
-                        <Input
-                            id="clientUrl"
-                            placeholder="your-client-url"
-                            className="mt-1"
-                            value={currentForm.formData.clientUrl}
                             onChange={currentForm.handleInputChange}
                         />
                     </div>
@@ -321,7 +316,7 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                     </div>
                 </>
             );
-        case 'PdfQuery':
+        case 'chat_with_pdf':
             return (
                 <>
                     <div className="mb-4">
@@ -336,7 +331,7 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                     </div>
                 </>
             );
-        case 'ExcelQuery':
+        case 'chat_with_excel':
             return (
                 <>
                     <div className="mb-4">
@@ -354,7 +349,7 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
         default:
             return (
                 <div className="mb-4">
-                    <p>Connection details for {templateTitle}</p>
+                    <p>Connection details for {templateValue}</p>
                 </div>
             );
     }

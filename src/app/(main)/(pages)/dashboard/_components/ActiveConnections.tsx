@@ -8,13 +8,15 @@ interface ActiveConnectionsProps {
   isLoading: boolean;
   onManageConnection: (connectionId: string) => void;
   onChatConnection: (connectionId: string) => void;
+  getTemplateTitle: (value: string) => string;
 }
 
 const ActiveConnections: React.FC<ActiveConnectionsProps> = ({ 
   connections, 
   isLoading,
   onManageConnection, 
-  onChatConnection 
+  onChatConnection,
+  getTemplateTitle
 }) => {
   const [showActiveConnections, setShowActiveConnections] = useState(true);
   const [searchConnections, setSearchConnections] = useState('');
@@ -52,7 +54,6 @@ const ActiveConnections: React.FC<ActiveConnectionsProps> = ({
       
       {showActiveConnections && (
         <div>
-          {/* Search input for Active Connections */}
           <div className="flex items-center justify-end mb-8">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -78,6 +79,7 @@ const ActiveConnections: React.FC<ActiveConnectionsProps> = ({
                   connection={connection}
                   onManage={onManageConnection}
                   onChat={onChatConnection}
+                  getTemplateTitle={getTemplateTitle}
                 />
               ))}
             </div>

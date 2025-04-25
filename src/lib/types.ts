@@ -14,11 +14,8 @@ export interface PostgreSQLFormData {
   promptHelper?: string;
 }
 
-export interface MongoDBFormData {
-  connectionString: string;
-  database: string;
-  username: string;
-  password: string;
+export interface NeonFormData {
+  databaseUrl: string;
   connectionName: string;
   promptHelper?: string;
 }
@@ -26,17 +23,24 @@ export interface MongoDBFormData {
 export interface SupabaseFormData {
   supabaseUrl: string;
   supabaseKey: string;
+  databaseUrl: string;
   connectionName: string;
   promptHelper?: string;
 }
 
-export interface FirebaseFormData {
+export interface FirestoreFormData {
   clientEmail: string;
-  privateKeyId: string;
   privateKey: string;
   projectId: string;
-  clientId: string;
-  clientUrl: string;
+  connectionName: string;
+  promptHelper?: string;
+}
+
+export interface MongoDBFormData {
+  databaseUrl: string;
+  database: string;
+  username: string;
+  password: string;
   connectionName: string;
   promptHelper?: string;
 }
@@ -56,5 +60,24 @@ export interface ColumnInfo {
     description: string;
 }
 
+export interface Tables {
+  name: string;
+  columns: string[];
+}
 
+export interface ApiResponse {
+  generated_query?: string;
+  results?: any[];
+  response?: string;
+}
+
+export interface Message {
+  id: string;
+  type: "user" | "ai" | "system";
+  content: string;
+  queryData?: {
+    query: string;
+    results: any[];
+  };
+}
 
