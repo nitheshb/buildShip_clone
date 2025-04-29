@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
 import { ConnectionService } from '@/lib/services/connectionService';
@@ -44,20 +44,6 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
     const firestoreForm = useFirestoreForm();
     const pdfQueryForm = usePdfQueryForm();
     const excelQueryForm = useExcelQueryForm();
-
-    const getCurrentForm = useCallback(() => {
-        switch (templateValue) {
-            case 'chat_with_mysql': return mysqlForm;
-            case 'chat_with_postgresql': return postgresqlForm;
-            case 'chat_with_neon': return neondbForm;
-            case 'chat_with_mongodb': return mongodbForm;
-            case 'chat_with_supabase': return supabaseForm;
-            case 'chat_with_firestore': return firestoreForm;
-            case 'chat_with_pdf': return pdfQueryForm;
-            case 'chat_with_excel': return excelQueryForm;
-            default: return mysqlForm;
-        }
-    }, [templateValue, firestoreForm, mongodbForm, mysqlForm, neondbForm, postgresqlForm, supabaseForm, pdfQueryForm, excelQueryForm]);
 
     useEffect(() => {
         const loadConnectionData = async () => {
@@ -187,7 +173,8 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
         };
 
         loadConnectionData();
-    }, [connectionId, isOpen, templateValue, firestoreForm, getCurrentForm, mongodbForm, mysqlForm, neondbForm, postgresqlForm, supabaseForm]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [connectionId, isOpen, templateValue]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -197,7 +184,21 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
             setColumnsDescriptions({});
             setPreviousSelectedTables([]);
         }
-    }, [isOpen, setCurrentStep, setTables, setSelectedTables, setColumnsDescriptions, setPreviousSelectedTables]);
+    }, [isOpen]);
+
+    const getCurrentForm = () => {
+        switch (templateValue) {
+            case 'chat_with_mysql': return mysqlForm;
+            case 'chat_with_postgresql': return postgresqlForm;
+            case 'chat_with_neon': return neondbForm;
+            case 'chat_with_mongodb': return mongodbForm;
+            case 'chat_with_supabase': return supabaseForm;
+            case 'chat_with_firestore': return firestoreForm;
+            case 'chat_with_pdf': return pdfQueryForm;
+            case 'chat_with_excel': return excelQueryForm;
+            default: return mysqlForm;
+        }
+    };
 
     const currentForm = getCurrentForm();
 
