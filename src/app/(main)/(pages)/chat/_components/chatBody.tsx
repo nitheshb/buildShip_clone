@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Connection } from '@/hooks/useConnections';
 import QueryDisplay from "./queryDisplay";
-import { Message, ApiResponse } from "@/lib/types";
+import { Message } from "@/lib/types";
 import { executeQuery, getEndpointByType } from "@/lib/services/api";
 
 interface ChatBodyProps {
