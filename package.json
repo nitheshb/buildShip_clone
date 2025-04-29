@@ -67,6 +67,7 @@
     "react-resizable-panels": "^2.0.13",
     "reactflow": "^11.10.4",
     "schedular": "^0.0.1",
+    "sharp": "^0.34.1",
     "sonner": "^1.4.3",
     "stripe": "^14.21.0",
     "tailwind-merge": "^2.2.1",

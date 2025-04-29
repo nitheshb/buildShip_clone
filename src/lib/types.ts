@@ -48,6 +48,8 @@ export interface MongoDBFormData {
 export interface AIQueryFormData {
   filePath: string;
   connectionName: string;
+  type: 'pdf' | 'excel' | 'image';
+  query: string;
 }
 
 export interface TableInfo {
@@ -81,3 +83,21 @@ export interface Message {
   };
 }
 
+export interface PDFFormData {
+  filePath: string;
+  connectionName: string;
+  promptHelper: string;
+  query: string;  // Add this line
+}
+
+export interface ExcelFormData {
+  filePath: string;
+  connectionName: string;
+  promptHelper: string;
+}
+
+export interface ImageFormData {
+  filePath: string;
+  connectionName: string;
+  promptHelper: string;
+}

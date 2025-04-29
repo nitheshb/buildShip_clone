@@ -346,6 +346,21 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                     </div>
                 </>
             );
+            case 'chat_with_image':
+            return (
+                <>
+                    <div className="mb-4">
+                        <Label htmlFor="fileUpload">Upload an Image</Label>
+                        <Input
+                            id="fileUpload"
+                            type="file"
+                            accept=".png, .jpg, .jpeg"
+                            className="mt-1"
+                            onChange={currentForm.handleInputChange}
+                        />
+                    </div>
+                </>
+            );
         default:
             return (
                 <div className="mb-4">

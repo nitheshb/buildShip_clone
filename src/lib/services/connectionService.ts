@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { MySQLFormData, PostgreSQLFormData, MongoDBFormData, SupabaseFormData, FirestoreFormData, AIQueryFormData, NeonFormData } from '../types';
+import { MySQLFormData, PostgreSQLFormData, MongoDBFormData, SupabaseFormData, FirestoreFormData, AIQueryFormData, NeonFormData, PDFFormData, ExcelFormData, ImageFormData } from '../types';
 import { Connection } from '@/hooks/useConnections';
 import { cryptoService } from './cryptoService';
 
@@ -254,6 +254,106 @@ export const ConnectionService = {
     }
   },
 
+  async savePDFConnection(data: PDFFormData, userId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!data.filePath || !data.connectionName || !data.promptHelper) {
+        return { success: false, error: 'All fields are required' };
+      }
+
+      const connectionDetails = {
+        file_path: data.filePath
+      };
+
+      const { error } = await supabase
+        .from('connections')
+        .insert([
+          {
+            connection_type: 'chat_with_pdf',
+            connection_name: data.connectionName,
+            user_id: userId,
+            connection_details: connectionDetails,
+            prompt_helper: data.promptHelper
+          }]);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      console.error('Error saving PDF connection:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save connection'
+      };
+    }
+  },
+
+  async saveExcelConnection(data: ExcelFormData, userId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!data.filePath || !data.connectionName || !data.promptHelper) {
+        return { success: false, error: 'All fields are required' };
+      }
+
+      const connectionDetails = {
+        file_path: data.filePath
+      };
+
+      const { error } = await supabase
+        .from('connections')
+        .insert([
+          {
+            connection_type: 'chat_with_excel',
+            connection_name: data.connectionName,
+            user_id: userId,
+            connection_details: connectionDetails,
+            prompt_helper: data.promptHelper
+          }]);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      console.error('Error saving Excel connection:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save connection'
+      };
+    }
+  },
+
+  async saveImageConnection(data: ImageFormData, userId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Validate that all required fields are provided
+      if (!data.filePath || !data.connectionName || !data.promptHelper) {
+        return { success: false, error: 'All fields are required' };
+      }
+  
+      // Connection details to store in Supabase
+      const connectionDetails = {
+        file_path: data.filePath
+      };
+  
+      // Insert the image connection details into the Supabase 'connections' table
+      const { error } = await supabase
+        .from('connections')
+        .insert([{
+          connection_type: 'chat_with_image',   // Connection type for image
+          connection_name: data.connectionName, // The name of the connection
+          user_id: userId,                      // User ID
+          connection_details: connectionDetails, // Image connection details (file path)
+          prompt_helper: data.promptHelper      // Prompt helper (could include other metadata)
+        }]);
+  
+      // If there is an error with the database insert, throw it
+      if (error) throw error;
+  
+      return { success: true };
+    } catch (err) {
+      console.error('Error saving Image connection:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to save connection'
+      };
+    }
+  },
+  
   async checkConnectionNameExists(connectionName: string): Promise<boolean> {
     try {
       const { data, error } = await supabase
@@ -273,57 +373,143 @@ export const ConnectionService = {
     }
   },
 
-  async savePdfQuery(data: AIQueryFormData, userId: string): Promise<{ success: boolean; error?: string }> {
+  async uploadFile(file: File, userId: string, type: string): Promise<{ success: boolean; filePath?: string; error?: string }> {
     try {
-      if (!data.filePath || !data.connectionName) {
-        return { success: false, error: 'File path is required' };
+      if (!file || !userId || !type) {
+        return { success: false, error: 'File, user ID, and type are required' };
       }
 
+      // Generate a unique file path
+      const filePath = `uploads/${userId}/${type}/${Date.now()}_${file.name}`;
+      
+      // Upload the file to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from('files')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+      
+      // Record the upload
       const { error } = await supabase
-        .from('pdf_query')
+        .from('file_uploads')
         .insert([{
-          connection_type: 'chat_with_pdf',
-          connection_name: data.connectionName,
-          file_path: data.filePath,
           user_id: userId,
+          file_name: file.name,
+          file_type: file.type,
+          file_path: filePath,
+          upload_type: type
         }]);
 
       if (error) throw error;
-      return { success: true };
+      
+      return { 
+        success: true,
+        filePath: filePath
+      };
     } catch (err) {
-      console.error('Error saving PDF query connection:', err);
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : 'Failed to save connection'
+      console.error('Error uploading file:', err);
+      return { 
+        success: false, 
+        error: err instanceof Error ? err.message : 'Failed to upload file' 
       };
     }
   },
 
-  async saveExcelQuery(data: AIQueryFormData, userId: string): Promise<{ success: boolean; error?: string }> {
+  async queryFile(type: string, filePath: string, query: string, userId: string): Promise<{ 
+    success: boolean; 
+    answer?: string; 
+    error?: string 
+  }> {
     try {
-      if (!data.filePath || !data.connectionName) {
-        return { success: false, error: 'File path is required' };
+      if (!userId || !filePath || !query || !type) {
+        return { 
+          success: false, 
+          error: 'User ID, file path, query, and type are required' 
+        };
       }
 
-      const { error } = await supabase
-        .from('excel_query')
+      // Validate file type
+      if (!['pdf', 'excel', 'image'].includes(type.toLowerCase())) {
+        return {
+          success: false,
+          error: 'Invalid file type. Supported types are pdf, excel, and image'
+        };
+      }
+
+      // Log the query for analytics purposes
+      const { error: logError } = await supabase
+        .from('query_logs')
         .insert([{
-          connection_type: 'chat_with_excel',
-          connection_name: data.connectionName,
-          file_path: data.filePath,
           user_id: userId,
+          file_path: filePath,
+          query: query,
+          query_type: type
         }]);
 
-      if (error) throw error;
-      return { success: true };
-    } catch (err) {
-      console.error('Error saving Excel query connection:', err);
+      if (logError) {
+        console.error('Error logging query:', logError);
+        // Continue execution even if logging fails
+      }
+
+      // Here you would typically send the query to an AI model
+      // This is a placeholder - replace with actual AI service integration
+      let answer = '';
+      
+      // Simulate different processing logic based on file type
+      if (type === 'pdf') {
+        // PDF processing logic - integrate with a PDF parser/AI service
+        answer = `Here is the answer to your question about the PDF: "${query}"`;
+      } else if (type === 'excel') {
+        // Excel processing logic - integrate with a spreadsheet parser/AI service
+        answer = `Here is the answer to your question about the Excel file: "${query}"`;
+      } else if (type === 'image') {
+        // Image processing logic - integrate with image analysis AI service
+        answer = `Here is the answer to your question about the image: "${query}"`;
+        
+        // Record the image analysis in a dedicated table
+        const { error: imageAnalysisError } = await supabase
+          .from('image_analysis')
+          .insert([{
+            user_id: userId,
+            image_path: filePath,
+            query: query,
+            result: answer
+          }]);
+
+        if (imageAnalysisError) {
+          console.error('Error recording image analysis:', imageAnalysisError);
+        }
+      }
+
+      // Save the result to the database
+      const { error: resultError } = await supabase
+        .from('query_results')
+        .insert([{
+          user_id: userId,
+          file_path: filePath,
+          query: query,
+          answer: answer,
+          query_type: type
+        }]);
+
+      if (resultError) {
+        console.error('Error saving query result:', resultError);
+        // Continue execution even if saving result fails
+      }
+
       return {
-        success: false,
-        error: err instanceof Error ? err.message : 'Failed to save connection'
+        success: true,
+        answer: answer
+      };
+    } catch (err) {
+      console.error(`Error querying ${type} file:`, err);
+      return { 
+        success: false, 
+        error: err instanceof Error ? err.message : `Failed to process ${type} query` 
       };
     }
   },
+
   async updateMySQLConnection(connectionId: string, data: MySQLFormData, userId: string): Promise<{ success: boolean; error?: string }> {
     try {
       if (!data.host || !data.port || !data.username || !data.databasename || !data.connectionName || !data.promptHelper) {
@@ -529,17 +715,22 @@ export const ConnectionService = {
     }
   },
 
-  async updatePdfQuery(connectionId: string, data: AIQueryFormData, userId: string): Promise<{ success: boolean; error?: string }> {
+  async updatePDFConnection(connectionId: string, data: PDFFormData, userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      if (!data.filePath || !data.connectionName) {
-        return { success: false, error: 'File path and connection name are required' };
+      if (!data.filePath || !data.connectionName || !data.promptHelper) {
+        return { success: false, error: 'All fields are required' };
       }
 
+      const connectionDetails = {
+        file_path: data.filePath
+      };
+
       const { error } = await supabase
-        .from('pdf_query')
+        .from('connections')
         .update({
           connection_name: data.connectionName,
-          file_path: data.filePath
+          connection_details: connectionDetails,
+          prompt_helper: data.promptHelper
         })
         .eq('id', connectionId)
         .eq('user_id', userId);
@@ -547,25 +738,30 @@ export const ConnectionService = {
       if (error) throw error;
       return { success: true };
     } catch (err) {
-      console.error('Error updating PDF query connection:', err);
+      console.error('Error updating PDF connection:', err);
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'Failed to update PDF query connection'
+        error: err instanceof Error ? err.message : 'Failed to update connection'
       };
     }
   },
 
-  async updateExcelQuery(connectionId: string, data: AIQueryFormData, userId: string): Promise<{ success: boolean; error?: string }> {
+  async updateExcelConnection(connectionId: string, data: ExcelFormData, userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      if (!data.filePath || !data.connectionName) {
-        return { success: false, error: 'File path and connection name are required' };
+      if (!data.filePath || !data.connectionName || !data.promptHelper) {
+        return { success: false, error: 'All fields are required' };
       }
 
+      const connectionDetails = {
+        file_path: data.filePath
+      };
+
       const { error } = await supabase
-        .from('excel_query')
+        .from('connections')
         .update({
           connection_name: data.connectionName,
-          file_path: data.filePath
+          connection_details: connectionDetails,
+          prompt_helper: data.promptHelper
         })
         .eq('id', connectionId)
         .eq('user_id', userId);
@@ -573,13 +769,45 @@ export const ConnectionService = {
       if (error) throw error;
       return { success: true };
     } catch (err) {
-      console.error('Error updating Excel query connection:', err);
+      console.error('Error updating Excel connection:', err);
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'Failed to update Excel query connection'
+        error: err instanceof Error ? err.message : 'Failed to update connection'
       };
     }
   },
+
+  async updateImageConnection(connectionId: string, data: ImageFormData, userId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!data.filePath || !data.connectionName || !data.promptHelper) {
+        return { success: false, error: 'All fields are required' };
+      }
+
+      const connectionDetails = {
+        file_path: data.filePath
+      };
+
+      const { error } = await supabase
+        .from('connections')
+        .update({
+          connection_name: data.connectionName,
+          connection_details: connectionDetails,
+          prompt_helper: data.promptHelper
+        })
+        .eq('id', connectionId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      console.error('Error updating Image connection:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to update connection'
+      };
+    }
+  },
+  
   async updateConnection(connectionId: string, formData: any, connectionType: string, userId: string): Promise<{ success: boolean; error?: string }> {   
     switch (connectionType) {
       case 'chat_with_mysql':
@@ -595,9 +823,11 @@ export const ConnectionService = {
       case 'chat_with_mongodb':
         return this.updateMongoDBConnection(connectionId, formData, userId);
       case 'chat_with_pdf':
-        return this.updatePdfQuery(connectionId, formData, userId);
+        return this.updatePDFConnection(connectionId, formData, userId);
       case 'chat_with_excel':
-        return this.updateExcelQuery(connectionId, formData, userId);
+        return this.updateExcelConnection(connectionId, formData, userId);
+      case 'chat_with_image':
+        return this.updateImageConnection(connectionId, formData, userId);
       default:
         return { success: false, error: 'Unknown connection type' };
     }

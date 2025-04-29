@@ -2,10 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ConnectionService } from '@/lib/services/connectionService';
 import { fetchMysqlTables, fetchPostgresTables, fetchSupabaseTables, fetchNeonTables, fetchFirestoreCollections } from '@/lib/database/fetch-tables';
 import { testFirestoreConnection, testMySQLConnection, testNeonConnection, testPostgreSQLConnection, testSupabaseConnection } from '@/lib/database/test-connection';
-import { useMySQLForm, usePostgreSQLForm, useMongoDBForm, useSupabaseForm, usePdfQueryForm, useExcelQueryForm, useFirestoreForm, useNeonForm } from '@/hooks/useConnectionForm';
+import { useMySQLForm, usePostgreSQLForm, useMongoDBForm, useSupabaseForm, usePdfQueryForm, useExcelQueryForm, useFirestoreForm, useNeonForm, useImageQueryForm } from '@/hooks/useConnectionForm';
 import { DrawerHeader } from '../common/DrawerHeader';
 import { ProgressBar } from '../common/ProgressBar';
 import { ConnectionForm } from '../forms/ConnectionForm';
@@ -35,6 +39,7 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
     const [isEditMode, setIsEditMode] = useState(false);
     const [previousSelectedTables, setPreviousSelectedTables] = useState<string[]>([]);
     const [tableDescriptions, setTableDescriptions] = useState<Record<string, string>>({});
+    const [fileUploaded, setFileUploaded] = useState(false);
 
     const mysqlForm = useMySQLForm();
     const postgresqlForm = usePostgreSQLForm();
@@ -44,6 +49,7 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
     const firestoreForm = useFirestoreForm();
     const pdfQueryForm = usePdfQueryForm();
     const excelQueryForm = useExcelQueryForm();
+    const imageQueryForm = useImageQueryForm();
 
     useEffect(() => {
         const loadConnectionData = async () => {
@@ -109,6 +115,15 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
                                         username: connectionDetails.username || '',
                                         password: connectionDetails.password || '',
                                     });
+                                    break;
+                                case 'chat_with_pdf':
+                                    setForm(pdfQueryForm, {
+                                        filePath: connectionDetails.file_path || '',
+                                        query: connectionDetails.query || '',
+                                    });
+                                    if (connectionDetails.file_path) {
+                                        setFileUploaded(true);
+                                    }
                                     break;
                                 default:
                                     break;
@@ -183,6 +198,7 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
             setSelectedTables([]);
             setColumnsDescriptions({});
             setPreviousSelectedTables([]);
+            setFileUploaded(false);
         }
     }, [isOpen]);
 
@@ -196,6 +212,7 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
             case 'chat_with_firestore': return firestoreForm;
             case 'chat_with_pdf': return pdfQueryForm;
             case 'chat_with_excel': return excelQueryForm;
+            case 'chat_with_image' : return imageQueryForm;
             default: return mysqlForm;
         }
     };
@@ -350,10 +367,12 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
 
     const handleNextStep = async () => {
         if (currentStep === 1) {
-
-            const success = await fetchTables();
-            if (success) {
-                setCurrentStep(2);
+            // For database types, proceed to fetch tables
+            if (!['chat_with_pdf', 'chat_with_excel', 'chat_with_image'].includes(templateValue)) {
+                const success = await fetchTables();
+                if (success) {
+                    setCurrentStep(2);
+                }
             }
         } else if (currentStep === 2) {
             if (selectedTables.length === 0) {
@@ -430,7 +449,7 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
     const handleSubmit = async (e: React.FormEvent): Promise<void> => {
         e.preventDefault();
     
-        if (currentStep !== 3) {
+        if (currentStep !== 3 && !['chat_with_pdf', 'chat_with_excel', 'chat_with_image'].includes(templateValue)) {
             handleNextStep();
             return;
         }
@@ -448,109 +467,241 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
     
         setIsLoading(true);
         try {
-            const promptHelper = generatePromptHelper(selectedTables, tables, columnsDescriptions, tableDescriptions);
-            const promptHelperString = JSON.stringify(promptHelper);
-    
-            if (isEditMode && connectionId) {
-                let updatedData;
-                
-                switch (templateValue) {
-                    case 'chat_with_mysql':
-                        updatedData = { 
-                            ...mysqlForm.formData,
-                            promptHelper: promptHelperString 
-                        };
-                        break;
-                    case 'chat_with_postgresql':
-                        updatedData = { 
-                            ...postgresqlForm.formData,
-                            promptHelper: promptHelperString 
-                        };
-                        break;
-                    case 'chat_with_neon':
-                        updatedData = { 
-                            ...neondbForm.formData,
-                            promptHelper: promptHelperString 
-                        };
-                        break;
-                    case 'chat_with_supabase':
-                        updatedData = { 
-                            ...supabaseForm.formData,
-                            promptHelper: promptHelperString 
-                        };
-                        break;
-                    case 'chat_with_firestore':
-                        updatedData = { 
-                            ...firestoreForm.formData,
-                            promptHelper: promptHelperString 
-                        };
-                        break;
-                    case 'chat_with_mongodb':
-                        updatedData = { 
-                            ...mongodbForm.formData,
-                            promptHelper: promptHelperString 
-                        };
-                        break;
-                    default:
-                        throw new Error('Unsupported template type');
+            // For database connections with tables
+            if (!['chat_with_pdf', 'chat_with_excel', 'chat_with_image'].includes(templateValue)) {
+                const promptHelper = generatePromptHelper(selectedTables, tables, columnsDescriptions, tableDescriptions);
+                const promptHelperString = JSON.stringify(promptHelper);
+        
+                if (isEditMode && connectionId) {
+                    let updatedData;
+                    
+                    switch (templateValue) {
+                        case 'chat_with_mysql':
+                            updatedData = { 
+                                ...mysqlForm.formData,
+                                promptHelper: promptHelperString 
+                            };
+                            break;
+                        case 'chat_with_postgresql':
+                            updatedData = { 
+                                ...postgresqlForm.formData,
+                                promptHelper: promptHelperString 
+                            };
+                            break;
+                        case 'chat_with_neon':
+                            updatedData = { 
+                                ...neondbForm.formData,
+                                promptHelper: promptHelperString 
+                            };
+                            break;
+                        case 'chat_with_supabase':
+                            updatedData = { 
+                                ...supabaseForm.formData,
+                                promptHelper: promptHelperString 
+                            };
+                            break;
+                        case 'chat_with_firestore':
+                            updatedData = { 
+                                ...firestoreForm.formData,
+                                promptHelper: promptHelperString 
+                            };
+                            break;
+                        case 'chat_with_mongodb':
+                            updatedData = { 
+                                ...mongodbForm.formData,
+                                promptHelper: promptHelperString 
+                            };
+                            break;
+                        default:
+                            throw new Error('Unsupported template type');
+                    }
+                    
+                    const result = await ConnectionService.updateConnection(connectionId, updatedData, templateValue, userId);
+                    
+                    if (result.success) {
+                        currentForm.resetForm();
+                        setCurrentStep(1);
+                        setSelectedTables([]);
+                        setColumnsDescriptions({});
+                        onClose();
+                        toast.success('Connection updated successfully!');
+                    } else {
+                        throw new Error(result.error || 'Failed to update connection');
+                    }
+                } else {                
+                    switch (templateValue) {
+                        case 'chat_with_mysql':
+                            mysqlForm.formData.promptHelper = promptHelperString;
+                            break;
+                        case 'chat_with_postgresql':
+                            postgresqlForm.formData.promptHelper = promptHelperString;
+                            break;
+                        case 'chat_with_neon':
+                            neondbForm.formData.promptHelper = promptHelperString;
+                            break;
+                        case 'chat_with_supabase':
+                            supabaseForm.formData.promptHelper = promptHelperString;
+                            break;
+                        case 'chat_with_firestore':
+                            firestoreForm.formData.promptHelper = promptHelperString;
+                            break;
+                        case 'chat_with_mongodb':
+                            mongodbForm.formData.promptHelper = promptHelperString;
+                            break;
+                        default:
+                            throw new Error('Unsupported template type');
+                    }                                
+                    const connectionNameExists = await ConnectionService.checkConnectionNameExists(currentForm.formData.connectionName);
+                    if (connectionNameExists) {
+                        throw new Error('Connection name already exists! Please choose a different name.');
+                    }
+                    
+                    const result = await currentForm.handleSubmit(userId);
+                    
+                    if (result.success) {
+                        currentForm.resetForm();
+                        setCurrentStep(1);
+                        setSelectedTables([]);
+                        setColumnsDescriptions({});
+                        onClose();
+                        toast.success('Connection saved successfully!');
+                    } else {
+                        throw new Error(result.error || 'Failed to save connection');
+                    }
                 }
-                
-                const result = await ConnectionService.updateConnection(connectionId, updatedData, templateValue, userId);
-                
-                if (result.success) {
-                    currentForm.resetForm();
-                    setCurrentStep(1);
-                    setSelectedTables([]);
-                    setColumnsDescriptions({});
-                    onClose();
-                    toast.success('Connection updated successfully!');
-                } else {
-                    throw new Error(result.error || 'Failed to update connection');
-                }
-            } else {                
-                switch (templateValue) {
-                    case 'chat_with_mysql':
-                        mysqlForm.formData.promptHelper = promptHelperString;
-                        break;
-                    case 'chat_with_postgresql':
-                        postgresqlForm.formData.promptHelper = promptHelperString;
-                        break;
-                    case 'chat_with_neon':
-                        neondbForm.formData.promptHelper = promptHelperString;
-                        break;
-                    case 'chat_with_supabase':
-                        supabaseForm.formData.promptHelper = promptHelperString;
-                        break;
-                    case 'chat_with_firestore':
-                        firestoreForm.formData.promptHelper = promptHelperString;
-                        break;
-                    case 'chat_with_mongodb':
-                        mongodbForm.formData.promptHelper = promptHelperString;
-                        break;
-                    default:
-                        throw new Error('Unsupported template type');
-                }                                
-                const connectionNameExists = await ConnectionService.checkConnectionNameExists(currentForm.formData.connectionName);
-                if (connectionNameExists) {
-                    throw new Error('Connection name already exists! Please choose a different name.');
-                }
-                
-                const result = await currentForm.handleSubmit(userId);
-                
-                if (result.success) {
-                    currentForm.resetForm();
-                    setCurrentStep(1);
-                    setSelectedTables([]);
-                    setColumnsDescriptions({});
-                    onClose();
-                    toast.success('Connection saved successfully!');
-                } else {
-                    throw new Error(result.error || 'Failed to save connection');
-                }
+            } else {
+                // For file-based connections (PDF, Excel, Image)
+                handleFileSubmit(e);
             }
         } catch (error) {
             console.error('Form submission error:', error);
             toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleFileUpload = async () => {
+        if (!['chat_with_pdf', 'chat_with_excel', 'chat_with_image'].includes(templateValue)) {
+            return;
+        }
+    
+        const form = currentForm as any;
+        const file = form.fileObj;
+    
+        if (!file) {
+            toast.error("Please select a file first");
+            return;
+        }
+    
+        setIsLoading(true);
+    
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('userId', userId);
+    
+            // Determine file type based on template
+            let fileType;
+            let uploadEndpoint;
+    
+            if (templateValue === 'chat_with_pdf') {
+                fileType = 'pdf';
+                uploadEndpoint = '/api/pdf/upload';
+            } else if (templateValue === 'chat_with_excel') {
+                fileType = 'excel';
+                uploadEndpoint = '/api/excel/upload';
+            } else if (templateValue === 'chat_with_image') {
+                fileType = 'image'; // Handle image type here
+                uploadEndpoint = '/api/image/upload'; // Image upload endpoint
+            } else {
+                throw new Error('Invalid template type');
+            }
+    
+            formData.append('type', fileType);
+    
+            const uploadResponse = await fetch(uploadEndpoint, {
+                method: 'POST',
+                body: formData,
+            });
+    
+            const uploadResult = await uploadResponse.json();
+    
+            if (uploadResult.success) {
+                toast.success('File uploaded successfully!');
+                // Update form data with server-side file path
+                form.setFormData((prev: any) => ({
+                    ...prev,
+                    filePath: uploadResult.filePath || file.name
+                }));
+                setFileUploaded(true);
+            } else {
+                throw new Error(uploadResult.error || 'Upload failed');
+            }
+        } catch (error: any) {
+            toast.error(error.message || 'An error occurred during file upload');
+            setFileUploaded(false);
+        } finally {
+            setIsLoading(false);
+        }
+    };    
+
+    const handleAskQuestion = async () => {
+        if (!['chat_with_pdf', 'chat_with_excel', 'chat_with_image'].includes(templateValue)) {
+            return;
+        }
+        
+        const form = currentForm as any;
+        const query = form.formData.query;
+        
+        if (!query) {
+            toast.error("Please enter a question");
+            return;
+        }
+        
+        if (!form.formData.filePath) {
+            toast.error("Please upload a file first");
+            return;
+        }
+        
+        setIsLoading(true);
+        
+        try {
+            // Determine endpoint based on file type
+            let queryEndpoint;
+            if (templateValue === 'chat_with_pdf') {
+                queryEndpoint = '/api/pdf/query';
+            } else if (templateValue === 'chat_with_excel') {
+                queryEndpoint = '/api/excel/query';
+            } else if (templateValue === 'chat_with_image') {
+                queryEndpoint = '/api/image/query';
+            } else {
+                throw new Error('Invalid template type');
+            }
+            
+            const queryResponse = await fetch(queryEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    filePath: form.formData.filePath,
+                    query: query,
+                    userId: userId
+                }),
+            });
+        
+            const queryResult = await queryResponse.json();
+            
+            if (queryResult.success) {
+                toast.success('Query processed successfully!');
+                // Display the answer
+                alert(`Answer: ${queryResult.answer}`);
+            } else {
+                throw new Error(queryResult.error || 'Query failed');
+            }
+        } catch (error: any) {
+            toast.error(error.message || 'An error occurred processing your question');
         } finally {
             setIsLoading(false);
         }
@@ -565,10 +716,19 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
             return;
         }
 
+        if (!fileUploaded && !isEditMode) {
+            await handleFileUpload();
+            return;
+        }
+
         const result = await currentForm.handleSubmit(userId);
         if (result.success) {
             currentForm.resetForm();
+            setFileUploaded(false);
             onClose();
+            toast.success(`${templateValue === 'chat_with_pdf' ? 'PDF' : 'File'} connection saved successfully!`);
+        } else {
+            toast.error(result.error || "Failed to save connection");
         }
     };
 
@@ -580,15 +740,87 @@ const ConnectionDrawer: React.FC<ConnectionDrawerProps> = ({ isOpen, onClose, te
     const getStepTitle = () => {
         const templateTitle = getTemplateTitle(templateValue);
         const mode = isEditMode ? "Edit Connection to" : "Connection to";
-            return `${mode} ${templateTitle}`;
+        return `${mode} ${templateTitle}`;
+    };
+    
+    const getPdfFields = () => {
+        return (
+            <>
+                <div className="mb-4">
+                    <Label htmlFor="connectionName">Connection Name</Label>
+                    <Input
+                        id="connectionName"
+                        name="connectionName"
+                        placeholder="My PDF Connection"
+                        className="mt-1"
+                        value={pdfQueryForm.formData.connectionName}
+                        onChange={pdfQueryForm.handleInputChange}
+                        required
+                    />
+                </div>
+                <div className="mb-4">
+                    <Label htmlFor="fileUpload">Upload PDF File</Label>
+                    <Input
+                        id="fileUpload"
+                        name="fileUpload"
+                        type="file"
+                        accept=".pdf"
+                        className="mt-1"
+                        onChange={pdfQueryForm.handleInputChange}
+                        disabled={isEditMode && fileUploaded}
+                    />
+                </div>
+
+                {fileUploaded && (
+                    <>
+                        <div className="mb-4">
+                            <Label htmlFor="query">Ask a Question</Label>
+                            <Input
+                                id="query"
+                                name="query"
+                                type="text"
+                                placeholder="Enter your question about the PDF"
+                                className="mt-1"
+                                value={pdfQueryForm.formData.query}
+                                onChange={pdfQueryForm.handleInputChange}
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <Button
+                                type="button"
+                                onClick={handleAskQuestion}
+                                disabled={isLoading || !pdfQueryForm.formData.query}
+                            >
+                                {isLoading ? 'Processing...' : 'Ask Question'}
+                            </Button>
+                        </div>
+                    </>
+                )}
+            </>
+        );
     };
 
-    const isFileUpload = templateValue === 'chat_with_pdf' || templateValue === 'chat_with_excel';
+    const isFileUpload = templateValue === 'chat_with_pdf' || templateValue === 'chat_with_excel' || templateValue === 'chat_with_image';
+
+    const getFormFields = () => {
+        if (templateValue === 'chat_with_pdf') {
+            return getPdfFields();
+        }
+        
+        return (
+            <ConnectionForm
+                templateValue={templateValue}
+                currentForm={currentForm}
+                isLoading={isLoading}
+                onTestConnection={handleTestConnection}
+            />
+        );
+    };
 
     return (
         <div className={`fixed inset-y-0 right-0 w-[500px] bg-background shadow-xl transform transition-transform duration-300 ease-in-out z-50 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="flex flex-col h-full">
-                <DrawerHeader title={getStepTitle()} onClose={onClose} />
+<DrawerHeader title={getStepTitle()} onClose={onClose} />
 
                 {!isFileUpload && <ProgressBar currentStep={currentStep} />}
 

@@ -52,6 +52,13 @@ export const templateData = [
         description:
             "Chat with OpenAI and get answers to the questions asked from the uploaded Excel sheet.",
         icons: ['excel.svg', 'openai.svg'],
+    },
+    {
+        title: "ImageQuery",
+        value: "chat_with_image",
+        description:
+            "Chat with OpenAI and get answers to the questions asked from the uploaded image.",
+        icons: ['openai.svg'],
     }
 ];
 

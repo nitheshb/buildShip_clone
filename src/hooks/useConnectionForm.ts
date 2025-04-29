@@ -6,7 +6,10 @@ import {
   SupabaseFormData, 
   AIQueryFormData,
   FirestoreFormData,
-  NeonFormData
+  NeonFormData,
+  PDFFormData,
+  ExcelFormData,
+  ImageFormData
 } from '@/lib/types';
 import { ConnectionService } from '@/lib/services/connectionService';
 
@@ -410,23 +413,36 @@ export const useMongoDBForm = () => {
   };
 };
 
+// PDF form hook
 export const usePdfQueryForm = () => {
-  const [formData, setFormData] = useState<AIQueryFormData>({
+  const [fileObj, setFileObj] = useState<File | null>(null);
+  const [formData, setFormData] = useState<PDFFormData>({
     filePath: '',
     connectionName: '',
+    promptHelper: '',
+    query: ''  // Initialize query here
   });
+  const [queryData, setQueryData] = useState<{query: string}>({
+    query: ''
+  });
+  const [queryResult, setQueryResult] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [id]: id === 'fileUpload' ? (e.target.files?.[0]?.name || '') : value,
-    }));
-
-    if (id === 'fileUpload' && e.target.files && e.target.files.length > 0) {
-      setFormData(prev => ({ ...prev, filePath: URL.createObjectURL(e.target.files![0]) }));
+    const { id, value, files } = e.target;
+    
+    if (id === 'fileUpload' && files && files[0]) {
+      const file = files[0];
+      setFileObj(file);
+      setFormData(prev => ({
+        ...prev,
+        filePath: URL.createObjectURL(file)
+      }));
+    } else if (id === 'query') {
+      setQueryData(prev => ({ ...prev, query: value }));
+    } else {
+      setFormData(prev => ({ ...prev, [id]: value }));
     }
   };
 
@@ -434,64 +450,148 @@ export const usePdfQueryForm = () => {
     setIsSubmitting(true);
     setError(null);
 
-    const result = await ConnectionService.savePdfQuery(formData, userId);
-
-    setIsSubmitting(false);
-    if (!result.success && result.error) {
-      setError(result.error);
+    try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      
+      const result = await ConnectionService.savePDFConnection(formData, userId);
+      
+      setIsSubmitting(false);
+      if (!result.success && result.error) {
+        setError(result.error);
+      }
+      
+      return result;
+    } catch (err) {
+      setIsSubmitting(false);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to save connection';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     }
-
-    return result;
   };
 
   const handleUpdate = async (connectionId: string, userId: string) => {
     setIsSubmitting(true);
     setError(null);
-    const result = await ConnectionService.updatePdfQuery(connectionId, formData, userId);
-    setIsSubmitting(false);
-    if (!result.success && result.error) {
-      setError(result.error);
+    
+    try {
+      const result = await ConnectionService.updateConnection(connectionId, formData, 'pdf', userId);
+      
+      setIsSubmitting(false);
+      if (!result.success && result.error) {
+        setError(result.error);
+      }
+      
+      return result;
+    } catch (err) {
+      setIsSubmitting(false);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update connection';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     }
-    return result;
+  };
+
+  const askQuestion = async (userId: string, filePath: string, query: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    setQueryResult(null);
+
+    try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+
+      if (!filePath) {
+        throw new Error('File path is required');
+      }
+
+      if (!query) {
+        throw new Error('Query is required');
+      }
+      
+      const result = await ConnectionService.queryFile('pdf', filePath, query, userId);
+      
+      setIsSubmitting(false);
+      
+      if (result.success) {
+        setQueryResult(result.answer || 'No answer received');
+        return result;
+      } else {
+        setError(result.error || 'Query failed');
+        return { success: false, error: result.error };
+      }
+    } catch (err) {
+      setIsSubmitting(false);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to process query';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    }
   };
 
   const resetForm = () => {
+    if (fileObj && formData.filePath) {
+      URL.revokeObjectURL(formData.filePath);
+    }
+    setFileObj(null);
     setFormData({
       filePath: '',
       connectionName: '',
+      promptHelper: '',
+      query: ''  // Initialize query here
     });
+    setQueryData({
+      query: ''
+    });
+    setQueryResult(null);
     setError(null);
   };
 
   return {
     formData,
+    fileObj,
+    queryData,
+    queryResult,
     setFormData,
     handleInputChange,
     handleSubmit,
     handleUpdate,
+    askQuestion,
     resetForm,
     isSubmitting,
-    error,
+    error
   };
 };
 
+// Excel form hook
 export const useExcelQueryForm = () => {
-  const [formData, setFormData] = useState<AIQueryFormData>({
+  const [fileObj, setFileObj] = useState<File | null>(null);
+  const [formData, setFormData] = useState<ExcelFormData>({
     filePath: '',
     connectionName: '',
+    promptHelper: ''
   });
+  const [queryData, setQueryData] = useState<{query: string}>({
+    query: ''
+  });
+  const [queryResult, setQueryResult] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [id]: id === 'fileUpload' ? (e.target.files?.[0]?.name || '') : value,
-    }));
-
-    if (id === 'fileUpload' && e.target.files && e.target.files.length > 0) {
-      setFormData(prev => ({ ...prev, filePath: URL.createObjectURL(e.target.files![0]) }));
+    const { id, value, files } = e.target;
+    
+    if (id === 'fileUpload' && files && files[0]) {
+      const file = files[0];
+      setFileObj(file);
+      setFormData(prev => ({
+        ...prev,
+        filePath: URL.createObjectURL(file)
+      }));
+    } else if (id === 'query') {
+      setQueryData(prev => ({ ...prev, query: value }));
+    } else {
+      setFormData(prev => ({ ...prev, [id]: value }));
     }
   };
 
@@ -499,43 +599,262 @@ export const useExcelQueryForm = () => {
     setIsSubmitting(true);
     setError(null);
 
-    const result = await ConnectionService.saveExcelQuery(formData, userId);
-
-    setIsSubmitting(false);
-    if (!result.success && result.error) {
-      setError(result.error);
+    try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      
+      const result = await ConnectionService.saveExcelConnection(formData, userId);
+      
+      setIsSubmitting(false);
+      if (!result.success && result.error) {
+        setError(result.error);
+      }
+      
+      return result;
+    } catch (err) {
+      setIsSubmitting(false);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to save connection';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     }
-
-    return result;
   };
 
   const handleUpdate = async (connectionId: string, userId: string) => {
     setIsSubmitting(true);
     setError(null);
-    const result = await ConnectionService.updateExcelQuery(connectionId, formData, userId);
-    setIsSubmitting(false);
-    if (!result.success && result.error) {
-      setError(result.error);
+    
+    try {
+      const result = await ConnectionService.updateConnection(connectionId, formData, 'excel', userId);
+      
+      setIsSubmitting(false);
+      if (!result.success && result.error) {
+        setError(result.error);
+      }
+      
+      return result;
+    } catch (err) {
+      setIsSubmitting(false);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update connection';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     }
-    return result;
+  };
+
+  const askQuestion = async (userId: string, filePath: string, query: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    setQueryResult(null);
+
+    try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+
+      if (!filePath) {
+        throw new Error('File path is required');
+      }
+
+      if (!query) {
+        throw new Error('Query is required');
+      }
+      
+      const result = await ConnectionService.queryFile('excel', filePath, query, userId);
+      
+      setIsSubmitting(false);
+      
+      if (result.success) {
+        setQueryResult(result.answer || 'No answer received');
+        return result;
+      } else {
+        setError(result.error || 'Query failed');
+        return { success: false, error: result.error };
+      }
+    } catch (err) {
+      setIsSubmitting(false);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to process query';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    }
   };
 
   const resetForm = () => {
+    if (fileObj && formData.filePath) {
+      URL.revokeObjectURL(formData.filePath);
+    }
+    setFileObj(null);
     setFormData({
       filePath: '',
       connectionName: '',
+      promptHelper: ''
     });
+    setQueryData({
+      query: ''
+    });
+    setQueryResult(null);
     setError(null);
   };
 
   return {
     formData,
+    fileObj,
+    queryData,
+    queryResult,
     setFormData,
     handleInputChange,
     handleSubmit,
     handleUpdate,
+    askQuestion,
     resetForm,
     isSubmitting,
-    error,
+    error
+  };
+};
+
+// Image form hook
+export const useImageQueryForm = () => {
+  const [fileObj, setFileObj] = useState<File | null>(null);
+  const [formData, setFormData] = useState<ImageFormData>({
+    filePath: '',
+    connectionName: '',
+    promptHelper: ''
+  });
+  const [queryData, setQueryData] = useState<{query: string}>({
+    query: ''
+  });
+  const [queryResult, setQueryResult] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value, files } = e.target;
+    
+    if (id === 'fileUpload' && files && files[0]) {
+      const file = files[0];
+      setFileObj(file);
+      setFormData(prev => ({
+        ...prev,
+        filePath: URL.createObjectURL(file)
+      }));
+    } else if (id === 'query') {
+      setQueryData(prev => ({ ...prev, query: value }));
+    } else {
+      setFormData(prev => ({ ...prev, [id]: value }));
+    }
+  };
+
+  const handleSubmit = async (userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+
+      const result = await ConnectionService.saveImageConnection(formData, userId);
+
+      setIsSubmitting(false);
+      if (!result.success && result.error) {
+        setError(result.error);
+      }
+
+      return result;
+    } catch (err) {
+      setIsSubmitting(false);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to save connection';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+  };
+
+  const handleUpdate = async (connectionId: string, userId: string) => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const result = await ConnectionService.updateConnection(connectionId, formData, 'image', userId);
+
+      setIsSubmitting(false);
+      if (!result.success && result.error) {
+        setError(result.error);
+      }
+
+      return result;
+    } catch (err) {
+      setIsSubmitting(false);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update connection';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+  };
+
+  const askQuestion = async (userId: string, filePath: string, query: string) => {
+    setIsSubmitting(true);
+    setError(null);
+    setQueryResult(null);
+
+    try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+
+      if (!filePath) {
+        throw new Error('File path is required');
+      }
+
+      if (!query) {
+        throw new Error('Query is required');
+      }
+
+      const result = await ConnectionService.queryFile('image', filePath, query, userId);
+
+      setIsSubmitting(false);
+
+      if (result.success) {
+        setQueryResult(result.answer || 'No answer received');
+        return result;
+      } else {
+        setError(result.error || 'Query failed');
+        return { success: false, error: result.error };
+      }
+    } catch (err) {
+      setIsSubmitting(false);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to process query';
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+  };
+
+  const resetForm = () => {
+    if (fileObj && formData.filePath) {
+      URL.revokeObjectURL(formData.filePath);
+    }
+    setFileObj(null);
+    setFormData({
+      filePath: '',
+      connectionName: '',
+      promptHelper: ''
+    });
+    setQueryData({
+      query: ''
+    });
+    setQueryResult(null);
+    setError(null);
+  };
+
+  return {
+    formData,
+    fileObj,
+    queryData,
+    queryResult,
+    setFormData,
+    handleInputChange,
+    handleSubmit,
+    handleUpdate,
+    askQuestion,
+    resetForm,
+    isSubmitting,
+    error
   };
 };
