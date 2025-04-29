@@ -167,37 +167,6 @@ export const ConnectionForm: React.FC<ConnectionFormProps> = ({
                         />
                     </div>
                     <div className="mb-4">
-                        <Label htmlFor="database">Database Name</Label>
-                        <Input
-                            id="database"
-                            placeholder="my_database"
-                            className="mt-1"
-                            value={currentForm.formData.database}
-                            onChange={currentForm.handleInputChange}
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <Label htmlFor="username">Username (Optional)</Label>
-                        <Input
-                            id="username"
-                            placeholder="username"
-                            className="mt-1"
-                            value={currentForm.formData.username}
-                            onChange={currentForm.handleInputChange}
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <Label htmlFor="password">Password (Optional)</Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            placeholder="••••••••"
-                            className="mt-1"
-                            value={currentForm.formData.password}
-                            onChange={currentForm.handleInputChange}
-                        />
-                    </div>
-                    <div className="mb-4">
                         <Button
                             type="button"
                             onClick={onTestConnection}

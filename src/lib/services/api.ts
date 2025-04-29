@@ -55,9 +55,6 @@ export async function executeQuery(
         case 'chat_with_mongodb':
           Object.assign(credentials, {
             database_url: connection.connectionDetails.database_url,
-            database: connection.connectionDetails.database,
-            username: connection.connectionDetails.username,
-            password: connection.connectionDetails.password,
           });
           break;
       }

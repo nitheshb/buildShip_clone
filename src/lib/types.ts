@@ -38,9 +38,6 @@ export interface FirestoreFormData {
 
 export interface MongoDBFormData {
   databaseUrl: string;
-  database: string;
-  username: string;
-  password: string;
   connectionName: string;
   promptHelper?: string;
 }

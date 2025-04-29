@@ -347,9 +347,6 @@ export const useFirestoreForm = () => {
 export const useMongoDBForm = () => {
   const [formData, setFormData] = useState<MongoDBFormData>({
     databaseUrl: '',
-    database: '',
-    username: '',
-    password: '',
     connectionName: '',
     promptHelper: ''
   });
@@ -392,9 +389,6 @@ export const useMongoDBForm = () => {
   const resetForm = () => {
     setFormData({
       databaseUrl: '',
-      database: '',
-      username: '',
-      password: '',
       connectionName: '',
       promptHelper: ''
     });

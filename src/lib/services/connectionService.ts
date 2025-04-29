@@ -221,15 +221,12 @@ export const ConnectionService = {
 
   async saveMongoDBConnection(data: MongoDBFormData, userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      if (!data.databaseUrl || !data.database || !data.connectionName || !data.promptHelper) {
+      if (!data.databaseUrl || !data.connectionName || !data.promptHelper) {
         return { success: false, error: 'All fields are required' };
       }
 
       const connectionDetails = {
         database_url: data.databaseUrl,
-        database: data.database,
-        username: data.username || null,
-        password: data.password || null
       };
 
       const { error } = await supabase
@@ -682,18 +679,14 @@ export const ConnectionService = {
 
   async updateMongoDBConnection(connectionId: string, data: MongoDBFormData, userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      if (!data.databaseUrl || !data.database || !data.connectionName || !data.promptHelper) {
+      if (!data.databaseUrl || !data.connectionName || !data.promptHelper) {
         return { success: false, error: 'All fields are required' };
       }
 
       let connectionDetails: any = {
         database_url: data.databaseUrl,
-        database: data.database
       };
-
-      if (data.username) connectionDetails.username = data.username;
-      if (data.password) connectionDetails.password = data.password;
-
+      
       const { error } = await supabase
         .from('connections')
         .update({
